@@ -1,1 +1,1 @@
-# exploration-template-integration-test
+# Exploration-Template-Integration-Tests
