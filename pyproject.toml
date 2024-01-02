@@ -1,0 +1,120 @@
+[tool.poetry]
+name = "Integration Test Instance"
+version = "0.1.0"
+description = ""
+readme = "README.md"
+authors = ["appliedAI <info@appliedai.de>"]
+packages = [ {include = "integration_test_instance", from = "src"}]
+
+[tool.poetry.dependencies]
+# Only track dependencies which are required to execute/train the machine learning Code
+# For other dependencies such as code checks, use dependency groups: https://python-poetry.org/docs/managing-dependencies#dependency-groups
+
+python = ">=3.10, <3.12"
+pandas = "^1.5.3"
+ipykernel = "^6.22.0"
+jupytext = "^1.14.5"
+nbconvert = "^7.7.3"
+seaborn = "^0.12.2"
+plotly = "^5.14.1"
+pandera = "^0.15.1"
+loguru = "^0.7.0"
+
+
+
+
+
+[tool.poetry.group.docs.dependencies]
+mike = "^2.0.0"
+mkdocs-material = "^9.0.10"
+mkdocstrings-python = "^1.0.0"
+mkdocs-jupyter = "^0.24.1"
+mkdocs-git-revision-date-localized-plugin = "^1.2.0"
+
+
+[tool.poetry.group.dev.dependencies]
+copier = "^8.1.0"
+pre-commit = "^3.2.2"
+isort = "^5.12.0"
+black = "^23.3.0"
+flake8 = "^6.0.0"
+mypy = "^1.1.1"
+pylint = "^2.17.2"
+pytest = "^7.4.0"
+pytest-cov="^4.1.0"
+
+
+[build-system]
+requires = ["poetry-core>=1.0.0"]
+build-backend = "poetry.core.masonry.api"
+[[tool.poetry.source]]
+name = "aai-mlops-mike-mkdocs"
+url = "https://gitlab.aai.sh/api/v4/projects/416/packages/pypi/simple"
+priority="explicit"
+
+
+[[tool.poetry.source]]
+name = "PyPI"
+priority = "primary"
+
+[tool.pytest.ini_options]
+addopts = [
+  "--durations=5", # Print the 5 slowest tests
+]
+testpaths = ["tests"]
+
+[tool.black]
+# Source https://github.com/psf/black#configuration-format
+include = "\\.pyi?$"
+line-length = 88
+target-version = ["py310"]
+
+# Black-compatible settings for isort
+# See https://black.readthedocs.io/en/stable/compatible_configs.html
+[tool.isort]
+line_length = "88"
+profile = "black"
+# See https://gitlab.aai.sh/resources/mlops/exploration-template/-/issues/16
+treat_comments_as_code = ["# %%"]
+
+
+[tool.mypy]
+check_untyped_defs = true
+disallow_incomplete_defs = true
+ignore_missing_imports = true
+install_types = true
+pretty = true
+python_version = "3.10"
+scripts_are_modules = true
+strict_optional = false
+warn_unreachable = true
+cache_dir = ".cache/mypy"
+
+[tool.pylint.main]
+ignore-paths = ["tests"]
+output-format = "colorized"
+jobs = 0                    # Parallelize linting across all CPUs
+
+[tool.pylint.similarity]
+ignore-comments = true
+ignore-docstrings = true
+ignore-imports = true
+ignore-signatures = true
+min-similarity-lines = 5
+
+[tool.pylint.messages_control]
+disable = [
+  "line-too-long", # line too long, rely on black for reformatting of these, since sometimes URLs or comments can be longer
+  "fixme", # Allow FIXME & TODO comments
+  "missing-module-docstring", # Don't require a module docstring
+  "missing-function-docstring", # Don't require a function docstring
+  "invalid-name", # Allow names such as `df`
+  "too-many-arguments", # Allow more than 5 arguments in a function
+  "too-many-instance-attributes", # Don't require at least 2 public methods
+  "too-few-public-methods", # Allow more than 7 instance attributes
+  "pointless-statement", # Code cells in jupytext files can appear pointless, if they're just printing stuff.
+  "pointless-string-statement", # In jupytext, multiline strings for markdown cells can appear pointless to pylint.
+  "wrong-import-position", # In jupytext files it can be necessary to import somewhere else. Let isort handle import order
+  "wrong-import-order", # Can fail in jupytext files. Let isort handle this
+  "ungrouped-imports", # Can fail in jupytext files. Let isort handle this
+]
