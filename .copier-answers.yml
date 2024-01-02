@@ -1,0 +1,11 @@
+# Do not edit manually, this file got created during `copier copy`, and is used
+# during `copier update`, see https://copier.readthedocs.io/en/stable/updating/
+_commit: 0.2.0-96-g8f811e7
+_src_path: /workspaces/exploration-template
+ci: github
+documentation_deployment: true
+module_name: integration_test_instance
+project_name: Integration Test Instance
+python_version: '3.10'
+pytorch_use: false
+tensorflow_use: false

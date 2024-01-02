@@ -1,0 +1,64 @@
+# This config file uses `repo: local` to ensure that all tools
+# use the same versions both locally and in the pre-commit hooks.
+# Since local repos cannot use the `.pre-commit-hooks.yaml` file,
+# we have to manually define the hooks here, based on the hooks
+# as defined in the tools' upstream repo.
+
+repos:
+  - repo: local
+    # See https://github.com/PyCQA/isort/blob/main/.pre-commit-hooks.yaml
+    hooks:
+      - id: isort
+        name: isort
+        require_serial: true
+        language: system
+        types_or: [cython, pyi, python]
+        entry: build_scripts/run_in_venv.sh isort
+        args: ["--filter-files"]
+  - repo: local
+    # See https://github.com/psf/black/blob/main/.pre-commit-hooks.yaml
+    hooks:
+      - id: black
+        name: black
+        require_serial: true
+        language: system
+        types: [python]
+        entry: build_scripts/run_in_venv.sh black
+  - repo: local
+    # See https://github.com/PyCQA/flake8/blob/main/.pre-commit-hooks.yaml
+    hooks:
+      - id: flake8
+        name: flake8
+        require_serial: true
+        entry: build_scripts/run_in_venv.sh flake8
+        language: system
+        types: [python]
+  - repo: local
+    # See https://github.com/pre-commit/mirrors-mypy/blob/main/.pre-commit-hooks.yaml
+    hooks:
+      - id: mypy
+        name: mypy
+        require_serial: true
+        language: system
+        types_or: [python, pyi]
+        entry: build_scripts/run_in_venv.sh mypy
+        args:
+          [
+            "--non-interactive",
+          ]
+  - repo: local
+    # Pylint only works locally, since it needs to import modules and dependencies
+    # See: https://pylint.pycqa.org/en/latest/user_guide/pre-commit-integration.html
+    # See https://github.com/PyCQA/pylint/blob/main/.pre-commit-hooks.yaml
+    hooks:
+      - id: pylint
+        name: pylint
+        require_serial: true
+        language: system
+        types_or: [python, pyi]
+        entry: build_scripts/run_in_venv.sh pylint
+        args:
+          [
+            "-rn", # Only display messages
+            "-sn", # Don't display the score
+          ]

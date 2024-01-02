@@ -1,0 +1,37 @@
+name: 'Install the repository'
+description: 'Install the repository, including python and poetry'
+runs:
+  using: "composite"
+  steps:
+
+    - name: 'Install python'
+      uses: actions/setup-python@v5
+      with:
+        python-version: '3.11'
+
+    - name: 'Set git configuration'
+      shell: bash
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+    - name: 'Install poetry'
+      uses: abatilo/actions-poetry@v2
+      with:
+        poetry-version: '1.7'
+
+    - name: 'Setup poetry for caching'
+      shell: bash
+      run: |
+        poetry config virtualenvs.create true --local
+        poetry config virtualenvs.in-project true --local
+
+    - name: 'Define a cache for the virtual environment based on the dependencies lock file'
+      uses: actions/cache@v3
+      with:
+        path: ./.venv
+        key: venv-${{ hashFiles('poetry.lock') }}
+
+    - name: 'Install the project dependencies'
+      shell: bash
+      run: poetry install

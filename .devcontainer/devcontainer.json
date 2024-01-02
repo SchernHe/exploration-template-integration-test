@@ -1,0 +1,42 @@
+{
+    "name": "dev-container",
+    "build": {
+        "dockerfile": "Dockerfile",
+        // Treat the root of the project as docker build context => all paths in the
+        // Dockerfile relative to the project root
+        "context": "..",
+    },
+    // Install poetry venv during container creation, also ensure that LFS data is available
+    "onCreateCommand": "poetry install && (git lfs pull || echo \"Couldn't pull LFS data, are you in a new project? If not, manually ensure data is available\")",
+    // Only configure git after the start of a container, so that the hosts git config is read first
+    "postStartCommand": "git config --global --add safe.directory ${containerWorkspaceFolder} && git config --global pull.rebase false && git config --global core.editor 'code --wait' && poetry run pre-commit install",
+    // Comment out to connect as root instead. More info: https://aka.ms/vscode-remote/containers/non-root.
+    "containerUser": "dev-user",
+    "customizations": {
+        "vscode": {
+            // Should be synced manually with `.vscode/extensions.json`
+            "extensions": [
+                // Custom to this project
+                // ... Add your own extensions here ...
+                // Necessary
+                "EditorConfig.EditorConfig", // Configure VSCode via the .editorconfig
+                "ms-python.python", // Microsofts Python Extension
+                "ms-toolsai.jupyter", // Support for jupytext
+                // Recommended
+                "ms-python.black-formatter",
+                "ms-python.isort",
+                "ms-python.pylint",
+                "ms-python.flake8",
+                "streetsidesoftware.code-spell-checker", // Code Aware Spellchecker
+                "mhutchie.git-graph", // Git Graph Visualizer
+                "eamodio.gitlens", // Unobstrusive Inline GitBlame
+                "GitLab.gitlab-workflow", // Linting for `.gitlab-ci.yml` & much more
+                "github.vscode-github-actions", // Syntax highlighting and validation for GitHub actions
+                "njpwerner.autodocstring", // Docstring format support
+                "ms-vscode-remote.remote-containers", // Necessary to use the DevContainer
+                "timonwong.shellcheck", // Linter for .sh scripts
+                "ms-python.mypy-type-checker",
+            ]
+        }
+    }
+}
