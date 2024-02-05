@@ -1,7 +1,12 @@
 # This GitHub action re-creates the documentation for the current project version
 # whenever a pull-request gets opened, updated or closed.
 name: deploy-pages
-on: 
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
   pull_request:
     types:
       - opened
@@ -9,60 +14,25 @@ on:
       - closed
 permissions:
   contents: write
+  pages: write
 jobs:
 
-  parse-branch-name: 
+  deploy-pages:
     runs-on: "ubuntu-latest"
-    outputs:
-      branch_name: ${{ steps.var.outputs.branch_name}}
-    steps:
-      - name: "Set global variables"
-        uses: actions/github-script@v6
-        id: var
-        with:
-          script: |
-            const branchName = '${{ github.head_ref }}'.toLowerCase().replace (/\//g, "_");
-            core.setOutput('branch_name', branchName);
-
-  deploy-dev-pages:
-    # TODO: Use docker image created with .devcontainer
-    runs-on: ubuntu-latest
-    needs: parse-branch-name
-    if: github.event.pull_request.merged == false
-    env:
-      BRANCH_NAME: ${{ needs.parse-branch-name.outputs.branch_name }}
     steps:
       - uses: actions/checkout@v4
       - uses: ./.github/actions/install-repository
       - name: 'Deploy to pages with mike'
         run: |
           git fetch origin gh-pages --depth=1
-          poetry run mike deploy v$(poetry version --short)-dev-${{ env.BRANCH_NAME }} -u -p
-
-  remove-dev-pages:
-    # TODO: Use docker image created with .devcontainer
-    runs-on: ubuntu-latest
-    needs: parse-branch-name
-    if: github.event.pull_request.merged == true
-    env:
-      BRANCH_NAME: ${{ needs.parse-branch-name.outputs.branch_name }}
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-repository
-      - name: 'Deploy to pages with mike'
-        run: |
-          git fetch origin gh-pages --depth=1
-          poetry run mike delete v$(poetry version --short)-dev-${{ env.BRANCH_NAME }} -p
-
-  deploy-prod-pages:
-    # TODO: Use docker image created with .devcontainer
-    runs-on: ubuntu-latest
-    needs: remove-dev-pages
-    if: github.event.pull_request.merged == true && github.event.pull_request.base.ref == 'main'
-    steps:
-      - uses: actions/checkout@v4
-      - uses: ./.github/actions/install-repository
-      - name: 'Deploy to pages with mike'
-        run: |
-          git fetch origin gh-pages --depth=1
-          poetry run mike deploy v$(poetry version --short) latest -u -p
+          export CI_DEFAULT_BRANCH=${{ github.event.repository.default_branch }}
+          export CLEANED_REF_NAME=$(echo $GITHUB_REF_NAME | tr / _)
+          echo $CI_DEFAULT_BRANCH
+          echo $CLEANED_REF_NAME
+          poetry run mike deploy $CLEANED_REF_NAME -u -p
+          if poetry run mike list "" | grep -Fqx $CI_DEFAULT_BRANCH; then
+            poetry run mike set-default $CI_DEFAULT_BRANCH -p
+          else
+            echo "Documentation version $CI_DEFAULT_BRANCH does not exist yet. Set default to currently build version $CLEANED_REF_NAME"
+            poetry run mike set-default $CLEANED_REF_NAME -p
+          fi
