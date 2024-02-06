@@ -174,5 +174,4 @@ jobs:
             echo "Documentation version $CI_DEFAULT_BRANCH does not exist yet. Set default to currently build version $CLEANED_REF_NAME"
             poetry run mike set-default $CLEANED_REF_NAME -p
           fi
-
           
