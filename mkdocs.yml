@@ -1,0 +1,61 @@
+site_name: Integration Test Instance
+site_dir: public/docs
+# To fail on any error and validate that external links exist
+strict: true
+
+# Useful when developing locally: https://www.mkdocs.org/user-guide/configuration/#watch
+watch:
+- docs
+- src
+- mkdocs.yml
+
+plugins:
+  - mkdocstrings:
+      handlers:
+        python:
+          paths: [src]
+          options:
+            docstring_style: numpy
+            show_root_heading: true
+            show_submodules: true
+            show_signature_annotations: true
+  - mike:
+      version_selector: true
+      alias_type: redirect
+      canonical_version: latest
+  - search:
+  - git-revision-date-localized:
+      type: iso_date
+      # Set this to false, because the executed reports are not git tracked, hence
+      # they have no git timestamp
+      strict: false
+  - mkdocs-jupyter:
+      execute: false
+  - mkdocs-nav-weight:
+      # Use title of each index instead of the folder name
+      section_renamed: true
+      # Ensure root `index.md` stays at the top
+      index_weight: -10
+
+theme:
+  name: "material"
+  logo: images/craiyon_102836_A_drawing_of_a_cute_little_robot_exploring_the_jungle.png
+  favicon: images/craiyon_102836_A_drawing_of_a_cute_little_robot_exploring_the_jungle.png
+  icon:
+    repo: fontawesome/brands/gitlab
+  palette:
+    # Palette toggle for light mode
+    - scheme: default
+      toggle:
+        icon: material/brightness-7
+        name: Switch to dark mode
+
+    # Palette toggle for dark mode
+    - scheme: slate
+      toggle:
+        icon: material/brightness-4
+        name: Switch to light mode
+
+extra:
+  version:
+    provider: mike

@@ -1,0 +1,178 @@
+# This GitHub action run formatting (via pre-commit) and testing whenever a pull-request
+# is created / updated.
+name: ci-pipeline
+on:
+  push:
+    branches:
+      - main
+    tags:
+      - "*"
+  pull_request:
+    branches:
+      - main
+  # Allows to run this workflow manually from the 'Actions' tab and
+  # enables the integration tests
+  workflow_dispatch:
+  
+permissions:
+  contents: write
+  packages: write
+  pages: write
+jobs:
+
+  build-docker-image:
+    runs-on: ubuntu-latest
+    outputs:
+      cleaned_ref_name: ${{ steps.parsing.outputs.cleaned_ref_name }}
+      ghcr_image_name: ${{ steps.parsing.outputs.ghcr_image_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: docker/metadata-action@v3
+        id: metadata
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=ref,event=branch
+      - uses: docker/login-action@v1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - uses: int128/kaniko-action@v1
+        with:
+          file: .devcontainer/Dockerfile
+          push: true
+          tags: ${{ steps.metadata.outputs.tags }}
+          labels: ${{ steps.metadata.outputs.labels }}
+          cache: true
+          cache-repository: ghcr.io/${{ github.repository }}/cache
+          kaniko-args: |
+            --cache-copy-layers
+      # Pulling docker images expects the url to be all lowercase and "/" are
+      # replaced by "-"
+      # See: https://github.com/orgs/community/discussions/27086
+      - id: parsing
+        name: 'Parse the GITHUB_REPOSITORY to lowercase for ghcr'
+        run: |
+          export github_repository_lc=${GITHUB_REPOSITORY@L}
+          export cleaned_ref_name=$(echo $GITHUB_REF_NAME | tr / -)
+          echo "cleaned_ref_name=${cleaned_ref_name}" >> "$GITHUB_OUTPUT"
+          echo "ghcr_image_name=${github_repository_lc}:${cleaned_ref_name}" >> "$GITHUB_OUTPUT"
+
+  run-pre-commit:
+    runs-on: ubuntu-latest
+    needs: build-docker-image
+    container:
+      image: ghcr.io/${{ needs.build-docker-image.outputs.ghcr_image_name }}
+      # Fix:  https://github.com/actions/checkout/issues/1014
+      options: --user root
+    defaults:
+      run: 
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-repository
+      - name: "Run pre-commit on all files"
+        run: poetry run pre-commit run --all-files --verbose
+
+  run-unit-tests:
+    runs-on: ubuntu-latest
+    needs: 
+      - build-docker-image
+      - run-pre-commit
+    container:
+      image: ghcr.io/${{ needs.build-docker-image.outputs.ghcr_image_name }}
+      # Fix:  https://github.com/actions/checkout/issues/1014
+      options: --user root
+    defaults:
+      run: 
+        shell: bash
+    permissions:
+      contents: read
+      pull-requests: write      
+    steps:
+      - uses: actions/checkout@v4
+      - uses: ./.github/actions/install-repository
+      - name: 'Run unit-tests'
+        run: poetry run pytest tests --cov=src/ --cov-report=term:skip-covered --cov-report=xml:coverage.xml --junitxml=pytest-junit.xml
+      - name: 'Pytest coverage comment'
+        if: github.event_name == 'pull_request'
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          title: Unit-Test Coverage Report
+          junitxml-title: Unit-Test JUnit Report
+          junitxml-path: ./pytest-junit.xml
+          pytest-xml-coverage-path: ./coverage.xml
+          coverage-path-prefix: src/
+          badge-title: Coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
+
+  execute-jupytext:
+    runs-on: ubuntu-latest
+    needs: 
+      - build-docker-image
+    container:
+      image: ghcr.io/${{ needs.build-docker-image.outputs.ghcr_image_name }}
+      # Fix:  https://github.com/actions/checkout/issues/1014
+      options: --user root
+    defaults:
+      run: 
+        shell: bash
+    if: ${{ github.event_name == 'workflow_dispatch
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          lfs: true
+      - uses: ./.github/actions/install-repository
+      - name: 'Run jupytext to create notebooks for reporting'
+        run: |
+          poetry run python src/integration_test_instance/mlops/jupytext_to_executed_notebook.py src/integration_test_instance/reports/ docs/reports/
+      - name: 'Upload converted notebooks for pages'
+        uses: actions/upload-artifact@v4
+        with:
+          name: converted-reports
+          path: docs/reports/
+          retention-days: 1
+
+  deploy-pages:
+    runs-on: ubuntu-latest
+    needs: 
+      - build-docker-image
+      - execute-jupytext
+    container:
+      image: ghcr.io/${{ needs.build-docker-image.outputs.ghcr_image_name }}
+      # Fix:  https://github.com/actions/checkout/issues/1014
+      options: --user root
+    defaults:
+      run: 
+        shell: bash
+    if: ${{ github.event_name == 'workflow_dispatch
+    env:
+      CI_DEFAULT_BRANCH: ${{ github.event.repository.default_branch }}
+      CLEANED_REF_NAME: ${{ needs.build-docker-image.outputs.cleaned_ref_name }}
+    steps:
+      - uses: actions/checkout@v4
+      - name: 'Download artifacts from execute-jupytext'
+        uses: actions/download-artifact@v4
+        with:
+          name: converted-reports
+          path: docs/reports/
+      - uses: ./.github/actions/install-repository
+      - name: 'Deploy to pages with mike'
+        run: |
+          git fetch origin gh-pages --depth=1 || echo "Branch not exist yet"
+          poetry run mike deploy $CLEANED_REF_NAME -u -p
+          if poetry run mike list "" | grep -Fqx $CI_DEFAULT_BRANCH; then
+            poetry run mike set-default $CI_DEFAULT_BRANCH -p
+          else
+            echo "Documentation version $CI_DEFAULT_BRANCH does not exist yet. Set default to currently build version $CLEANED_REF_NAME"
+            poetry run mike set-default $CLEANED_REF_NAME -p
+          fi
+
+          

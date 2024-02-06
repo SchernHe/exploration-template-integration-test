@@ -1,0 +1,32 @@
+name: 'Install the repository'
+description: 'Install the repository, including python and poetry'
+runs:
+  using: "composite"
+  steps:
+    # Fix: https://github.com/actions/checkout/issues/363
+    - name: 'Add safe directory to enable git in container'
+      shell: bash
+      run: | 
+        git config --global --add safe.directory "$GITHUB_WORKSPACE"
+
+    - name: 'Set git configuration'
+      shell: bash
+      run: |
+        git config user.name github-actions
+        git config user.email github-actions@github.com
+
+    - name: 'Setup poetry for caching'
+      shell: bash
+      run: |
+        poetry config virtualenvs.create true --local
+        poetry config virtualenvs.in-project true --local
+
+    - name: 'Define a cache for the virtual environment based on the dependencies lock file'
+      uses: actions/cache@v3
+      with:
+        path: ./.venv
+        key: venv-${{ hashFiles('poetry.lock') }}
+
+    - name: 'Install the project dependencies'
+      shell: bash
+      run: poetry install
