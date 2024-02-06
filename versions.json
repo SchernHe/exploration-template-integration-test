@@ -3,5 +3,10 @@
     "version": "main",
     "title": "main",
     "aliases": []
+  },
+  {
+    "version": "issue-39-add-github-support-github-all",
+    "title": "issue-39-add-github-support-github-all",
+    "aliases": []
   }
 ]
