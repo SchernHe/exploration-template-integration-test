@@ -1,0 +1,26 @@
+{
+	// Should be synced manually with `.devcontainer/devcontainer.json`
+	"recommendations": [
+		// Custom to this project
+		// ... Add your own extensions here ...
+		// Necessary
+		"EditorConfig.EditorConfig", // Configure VSCode via the .editorconfig
+		"ms-python.python", // Microsofts Python Extension
+		"ms-toolsai.jupyter", // Support for jupytext
+		// Recommended
+		"ms-python.black-formatter",
+		"ms-python.isort",
+		"ms-python.pylint",
+		"ms-python.flake8",
+		"streetsidesoftware.code-spell-checker", // Code Aware Spellchecker
+		"mhutchie.git-graph", // Git Graph Visualizer
+		"eamodio.gitlens", // Unobstrusive Inline GitBlame
+		"GitLab.gitlab-workflow", // Linting for `.gitlab-ci.yml` & much more
+		"njpwerner.autodocstring", // Docstring format support
+		"ms-vscode-remote.remote-containers", // Necessary to use the DevContainer
+		"timonwong.shellcheck", // Linter for .sh scripts
+		"ms-python.mypy-type-checker",
+	],
+	// List of extensions recommended by VS Code that should not be recommended for users of this workspace.
+	"unwantedRecommendations": []
+}

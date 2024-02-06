@@ -1,0 +1,31 @@
+{
+    /**
+    * Shared VSCode Settings
+    *
+    * *WARNING:* Changes committed here will be applied to your colleagues VSCode as well.
+    *
+    * If you want to keep some of your settings private, use a `.code-workspace` file
+    * See https://code.visualstudio.com/docs/editor/workspaces#_multiroot-workspaces
+    */
+    "files.eol": "\n", // Also set via .editorconfig
+    "editor.rulers": [
+        88
+    ], // Line Length enforced by Black
+    "editor.formatOnSave": true,
+    // Apply isort on save
+    "[python]": {
+        "editor.codeActionsOnSave": {
+            "source.organizeImports": true
+        },
+        "editor.defaultFormatter": "ms-python.black-formatter",
+        "editor.formatOnSave": true,
+    },
+    // Pytest Config
+    "python.testing.pytestArgs": [
+        "tests",
+    ],
+    "python.testing.unittestEnabled": false,
+    "python.testing.pytestEnabled": true,
+    // Docstring formatter
+    "autoDocstring.docstringFormat": "numpy",
+}
