@@ -1,6 +1,7 @@
 # Do not edit manually, this file got created during `copier copy`, and is used
 # during `copier update`, see https://copier.readthedocs.io/en/stable/updating/
-_src_path: /builds/resources/mlops/exploration-template
+_commit: 0.3.0-27-g361c899
+_src_path: /workspaces/exploration-template
 ci: github
 documentation_deployment: false
 integration_test: true
